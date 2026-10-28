@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RailSafar - Online Train Reservation &amp; PNR Management System</title>
+    <meta name="description" content="Next-Generation Indian Railway Reservation System: Real-time seat availability, PNR inquiry, interactive berth selection, online & offline payments, and instant refund processing.">
+    
+    <!-- Design System CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    
+    <!-- Favicon SVG -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232563eb'><path d='M4 15.5C4 17.43 5.57 19 7.5 19L6 20.5v.5h12v-.5L16.5 19c1.93 0 3.5-1.57 3.5-3.5V5c0-3.5-3.58-4-8-4s-8 .5-8 4v10.5zm8 1.5c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm6-7H6V5h12v5z'/></svg>">
+</head>
+<body>
+
+    <!-- ========================================================
+         Navigation Bar
+         ======================================================== -->
+    <header class="navbar no-print">
+        <div class="brand-container" id="navHome">
+            <div class="brand-logo-icon">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M4 15.5C4 17.43 5.57 19 7.5 19L6 20.5v.5h12v-.5L16.5 19c1.93 0 3.5-1.57 3.5-3.5V5c0-3.5-3.58-4-8-4s-8 .5-8 4v10.5zm8 1.5c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm6-7H6V5h12v5z"/>
+                </svg>
+            </div>
+            <div class="brand-title">
+                <span>Rail<span class="text-gold">Safar</span></span>
+                <span class="brand-tagline">Indian Railways e-Portal</span>
+            </div>
+        </div>
+
+        <nav>
+            <ul class="nav-links">
+                <li><button class="nav-link active" data-view="view-search">Search Trains</button></li>
+                <li><button class="nav-link" data-view="view-pnr">PNR Status</button></li>
+                <li><button class="nav-link" data-view="view-refund-rules">Refund Rules</button></li>
+                <li id="navMyBookingsItem" style="display: none;">
+                    <button class="nav-link" data-view="view-my-bookings">My Bookings</button>
+                </li>
+                <li id="navAdminItem" style="display: none;">
+                    <button class="nav-link" data-view="view-admin">
+                        <span class="badge badge-admin">Admin Panel</span>
+                    </button>
+                </li>
+            </ul>
+        </nav>
+
+        <div class="nav-auth">
+            <!-- Unauthenticated State -->
+            <div id="unauthNav">
+                <button class="btn btn-secondary btn-sm" id="btnOpenAuthModal">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                    Login / Register
+                </button>
+            </div>
+
+            <!-- Authenticated State -->
+            <div id="authNav" style="display: none;" class="user-menu-pill">
+                <div class="user-avatar" id="navAvatar">U</div>
+                <div style="display: flex; flex-direction: column;">
+                    <span id="navUserName" style="font-size: 0.85rem; font-weight: 700;">User Name</span>
+                    <span id="navUserRole" style="font-size: 0.7rem; color: var(--text-secondary);">Passenger</span>
+                </div>
+                <button class="btn btn-secondary btn-sm" id="btnLogout" title="Logout" style="padding: 4px 8px; margin-left: 6px;">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- ========================================================
+         Main Content Area (View Switcher)
+         ======================================================== -->
+    <main class="main-content">
+
+        <!-- ================= VIEW 1: SEARCH & BOOK ================= -->
+        <section id="view-search" class="view-section active-view no-print">
+            
+            <!-- Hero Banner -->
+            <div class="hero-banner">
+                <div class="hero-text-content">
+                    <div class="hero-tag">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
+                        IRCTC Verified Gateway &bull; Live Network v4.2
+                    </div>
+                    <h1 class="hero-title">Book Train Tickets with <span class="text-gradient">Instant Confirmation</span></h1>
+                    <p class="hero-subtitle">Real-time seat quotas, interactive berth choice, PNR tracking, and automated refund processing for Indian Railways.</p>
+                </div>
+
+                <!-- Search Widget -->
+                <div class="search-widget">
+                    <form id="trainSearchForm">
+                        <div class="search-grid">
+                            <div class="form-group">
+                                <label class="form-label" for="searchOrigin">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>
+                                    From Station
+                                </label>
+                                <select id="searchOrigin" class="form-control" required>
+                                    <!-- Populated dynamically -->
+                                </select>
+                            </div>
+
+                            <div class="swap-btn-container">
+                                <button type="button" class="btn-swap" id="btnSwapStations" title="Swap stations">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 16V4m0 0L3 8m4-4l4 4m6 4v12m0 0l4-4m-4 4l-4-4"/></svg>
+                                </button>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label" for="searchDestination">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                                    To Station
+                                </label>
+                                <select id="searchDestination" class="form-control" required>
+                                    <!-- Populated dynamically -->
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label" for="searchDate">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                    Journey Date
+                                </label>
+                                <input type="date" id="searchDate" class="form-control" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label" for="searchClass">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                    Class
+                                </label>
+                                <select id="searchClass" class="form-control">
+                                    <option value="ALL">All Classes (1A, 2A, 3A, SL, CC)</option>
+                                    <option value="1A">AC First Class (1A)</option>
+                                    <option value="2A">AC 2 Tier (2A)</option>
+                                    <option value="3A">AC 3 Tier (3A)</option>
+                                    <option value="SL">Sleeper (SL)</option>
+                                    <option value="CC">AC Chair Car (CC)</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <button type="submit" class="btn btn-primary btn-lg" style="height: 48px;">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                                    Find Trains
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Features Ribbon -->
+            <div class="features-ribbon">
+                <div class="feature-card">
+                    <div class="feature-icon-box blue">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                    </div>
+                    <div>
+                        <h4 class="feature-title">Real-Time Seat Quotas</h4>
+                        <p class="feature-desc">Live status for Confirmed (CNF), RAC, and Waiting List (WL) across all railway coaches.</p>
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon-box gold">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                    </div>
+                    <div>
+                        <h4 class="feature-title">Interactive Berth Picker</h4>
+                        <p class="feature-desc">Select Lower, Upper, Middle, Side berths or Window seats directly with graphical coach layout.</p>
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon-box green">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                    </div>
+                    <div>
+                        <h4 class="feature-title">Online &amp; Offline Payment</h4>
+                        <p class="feature-desc">Pay via UPI QR, Debit/Credit Card, Net Banking or Station PRS Counter Cash Challan.</p>
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon-box purple">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    </div>
+                    <div>
+                        <h4 class="feature-title">Smart Refund Rules</h4>
+                        <p class="feature-desc">Automated tier-based refund computation with transparent percentage deduction and admin pass-through.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Train Search Results Section -->
+            <div id="trainResultsContainer" style="display: none;">
+                <div class="section-header">
+                    <div class="section-title-wrap">
+                        <h2>
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" color="var(--primary-light)"><path d="M4 15.5C4 17.43 5.57 19 7.5 19L6 20.5v.5h12v-.5L16.5 19c1.93 0 3.5-1.57 3.5-3.5V5c0-3.5-3.58-4-8-4s-8 .5-8 4v10.5zm8 1.5c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm6-7H6V5h12v5z"/></svg>
+                            Available Trains (<span id="resultsCount">0</span>)
+                        </h2>
+                        <p class="section-subtitle" id="resultsRouteSubtitle">Showing trains on selected route</p>
+                    </div>
+                    <div class="results-filter-bar">
+                        <span style="font-size: 0.85rem; color: var(--text-secondary);">Sort By:</span>
+                        <select id="sortResultsSelect" class="form-control" style="width: auto; padding: 6px 12px; font-size: 0.85rem;">
+                            <option value="departure">Departure Time (Earliest)</option>
+                            <option value="duration">Travel Duration (Fastest)</option>
+                            <option value="fare">Fare (Lowest First)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Train Cards List -->
+                <div id="trainList">
+                    <!-- Dynamic train cards will be rendered here -->
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ================= VIEW 2: PASSENGER & BERTH SELECTION ================= -->
+        <section id="view-booking" class="view-section no-print">
+            <div style="margin-bottom: 24px;">
+                <button class="btn btn-secondary btn-sm" id="btnBackToResults">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+                    Back to Train Results
+                </button>
+            </div>
+
+            <div class="checkout-layout">
+                <!-- Left Column: Passenger Details & Interactive Seat Map -->
+                <div>
+                    <!-- Train Summary Strip -->
+                    <div class="train-card" style="margin-bottom: 24px; padding: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                            <div>
+                                <span class="train-no-badge" id="bookTrainNo">12952</span>
+                                <h3 id="bookTrainName" style="display: inline; margin-left: 10px; font-size: 1.25rem;">Mumbai Tejas Rajdhani Express</h3>
+                            </div>
+                            <div class="badge badge-info" id="bookClassBadge">Class: 2A (AC 2-Tier)</div>
+                        </div>
+                        <div style="display: flex; gap: 30px; margin-top: 14px; font-size: 0.92rem; color: var(--text-secondary);">
+                            <div><strong>Date:</strong> <span id="bookJourneyDate" class="text-gold">2026-10-31</span></div>
+                            <div><strong>Route:</strong> <span id="bookRoute">NDLS &rarr; MMCT</span></div>
+                            <div><strong>Timing:</strong> <span id="bookTiming">16:55 &rarr; 08:35 (15h 40m)</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Passenger Input List -->
+                    <div style="margin-bottom: 24px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                            <h3 style="font-size: 1.2rem;">Passenger Details</h3>
+                            <button type="button" class="btn btn-secondary btn-sm" id="btnAddPassenger">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                + Add Passenger
+                            </button>
+                        </div>
+
+                        <div id="passengerFormsList">
+                            <!-- Injected dynamically -->
+                        </div>
+                    </div>
+
+                    <!-- Interactive Seat Map -->
+                    <div class="seat-map-container">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <h4 style="font-size: 1rem;">Interactive Coach Berth Selector</h4>
+                            <span style="font-size: 0.8rem; color: var(--text-secondary);">Click to assign seats or let system auto-allot</span>
+                        </div>
+                        
+                        <div class="coach-title" id="coachTitle">Coach B1 &bull; 2-Tier AC Layout</div>
+                        
+                        <div class="coach-layout" id="coachLayoutContainer">
+                            <!-- Generated dynamically based on selected travel class -->
+                        </div>
+
+                        <div class="seat-legend">
+                            <div class="legend-item"><div class="legend-box" style="background: rgba(255, 255, 255, 0.08); border: 1px solid var(--border-color);"></div> Available</div>
+                            <div class="legend-item"><div class="legend-box" style="background: var(--primary-gradient);"></div> Selected by You</div>
+                            <div class="legend-item"><div class="legend-box" style="background: rgba(239, 68, 68, 0.2); border: 1px solid rgba(239, 68, 68, 0.4);"></div> Booked</div>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Right Column: Fare Breakdown & Checkout Trigger -->
+                <div>
+                    <div class="fare-summary-card">
+                        <h3 style="font-size: 1.25rem; margin-bottom: 16px;">Fare Summary</h3>
+                        
+                        <div class="fare-row">
+                            <span>Base Fare (<span id="farePassengerCount">1</span> Passenger)</span>
+                            <span id="fareBaseTotal">₹3,120</span>
+                        </div>
+                        <div class="fare-row">
+                            <span>Reservation &amp; Superfast Charge</span>
+                            <span id="fareResCharge">₹80</span>
+                        </div>
+                        <div class="fare-row">
+                            <span>GST (5% for AC Classes)</span>
+                            <span id="fareGstTotal">₹160</span>
+                        </div>
+                        <div class="fare-row total">
+                            <span>Grand Total</span>
+                            <span id="fareGrandTotal" class="text-gold">₹3,360</span>
+                        </div>
+
+                        <div style="margin: 20px 0; font-size: 0.82rem; color: var(--text-muted); line-height: 1.5;">
+                            * Payment can be made online via UPI/Cards/Net Banking or generated as an offline station reservation challan.
+                        </div>
+
+                        <button class="btn btn-primary btn-lg" id="btnProceedToPayment" style="width: 100%;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                            Proceed to Payment
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= VIEW 3: PNR STATUS INQUIRY ================= -->
+        <section id="view-pnr" class="view-section no-print">
+            <div class="pnr-search-card">
+                <div class="brand-logo-icon" style="margin: 0 auto 16px; width: 48px; height: 48px;">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M4 15.5C4 17.43 5.57 19 7.5 19L6 20.5v.5h12v-.5L16.5 19c1.93 0 3.5-1.57 3.5-3.5V5c0-3.5-3.58-4-8-4s-8 .5-8 4v10.5zm8 1.5c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm6-7H6V5h12v5z"/></svg>
+                </div>
+                <h2>Check Real-Time PNR Status</h2>
+                <p style="color: var(--text-secondary); margin-top: 6px;">Enter your 10-digit PNR number to check current reservation status, coach/berth allotment, and charting progress.</p>
+
+                <div class="pnr-input-group">
+                    <input type="text" id="pnrQueryInput" class="form-control" placeholder="Enter 10-Digit PNR (e.g. 2468135790)" maxlength="10">
+                    <button class="btn btn-primary" id="btnCheckPnr">Get Status</button>
+                </div>
+
+                <!-- Sample quick test chips -->
+                <div style="margin-top: 16px; font-size: 0.82rem; color: var(--text-muted);">
+                    <span>Quick Test Demo PNRs:</span>
+                    <button class="btn btn-secondary btn-sm sample-pnr-btn" data-pnr="2468135790" style="margin: 4px;">2468135790 (CNF)</button>
+                    <button class="btn btn-secondary btn-sm sample-pnr-btn" data-pnr="8912345670" style="margin: 4px;">8912345670 (RAC)</button>
+                    <button class="btn btn-secondary btn-sm sample-pnr-btn" data-pnr="1357924680" style="margin: 4px;">1357924680 (Charted)</button>
+                </div>
+            </div>
+
+            <!-- PNR Results Area -->
+            <div id="pnrResultArea" class="pnr-result-box" style="display: none;">
+                <!-- Populated dynamically -->
+            </div>
+        </section>
+
+        <!-- ================= VIEW 4: MY BOOKINGS (PASSENGER DASHBOARD) ================= -->
+        <section id="view-my-bookings" class="view-section no-print">
+            <div class="section-header">
+                <div>
+                    <h2>My Train Reservations</h2>
+                    <p class="section-subtitle">Manage your booked journeys, print official E-Tickets, and submit cancellation requests.</p>
+                </div>
+            </div>
+
+            <div id="myBookingsList">
+                <!-- Injected dynamically -->
+            </div>
+        </section>
+
+        <!-- ================= VIEW 5: REFUND RULES & POLICY ================= -->
+        <section id="view-refund-rules" class="view-section no-print">
+            <div class="section-header">
+                <div>
+                    <h2>Railway Ticket Refund &amp; Cancellation Rules</h2>
+                    <p class="section-subtitle">Official cancellation charges based on date of reservation, class type, and hours prior to departure.</p>
+                </div>
+            </div>
+
+            <div class="features-ribbon" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));">
+                <div class="feature-card" style="border-left: 4px solid #10b981;">
+                    <div>
+                        <div class="badge badge-cnf" style="margin-bottom: 8px;">Tier 1 &bull; > 48 Hours Before Departure</div>
+                        <h4 style="margin-bottom: 6px;">Flat Cancellation Deduction</h4>
+                        <p class="feature-desc">Per Passenger Flat Fee:<br>
+                            &bull; <strong>1A / Executive:</strong> ₹240 + GST<br>
+                            &bull; <strong>2A:</strong> ₹200 + GST<br>
+                            &bull; <strong>3A / CC:</strong> ₹180 + GST<br>
+                            &bull; <strong>Sleeper (SL):</strong> ₹120<br>
+                            <em>Remaining fare is 100% refunded to passenger account.</em>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="feature-card" style="border-left: 4px solid #f59e0b;">
+                    <div>
+                        <div class="badge badge-rac" style="margin-bottom: 8px;">Tier 2 &bull; 48 to 12 Hours Before Departure</div>
+                        <h4 style="margin-bottom: 6px;">25% Deduction</h4>
+                        <p class="feature-desc">
+                            25% of total ticket fare is deducted subject to minimum flat cancellation charge per passenger. 
+                            <strong>75% is refunded.</strong>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="feature-card" style="border-left: 4px solid #f97316;">
+                    <div>
+                        <div class="badge badge-rac" style="margin-bottom: 8px;">Tier 3 &bull; 12 to 4 Hours Before Departure</div>
+                        <h4 style="margin-bottom: 6px;">50% Deduction</h4>
+                        <p class="feature-desc">
+                            50% of the total ticket fare is deducted up to chart preparation time. 
+                            <strong>50% is refunded.</strong>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="feature-card" style="border-left: 4px solid #ef4444;">
+                    <div>
+                        <div class="badge badge-wl" style="margin-bottom: 8px;">Tier 4 &bull; Less than 4 Hours / After Charting</div>
+                        <h4 style="margin-bottom: 6px;">0% Refund (No Refund)</h4>
+                        <p class="feature-desc">
+                            No refund is granted on confirmed tickets cancelled after chart preparation or within 4 hours of scheduled departure.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="feature-card" style="border-left: 4px solid #38bdf8;">
+                    <div>
+                        <div class="badge badge-info" style="margin-bottom: 8px;">RAC &amp; Waitlisted Tickets</div>
+                        <h4 style="margin-bottom: 6px;">Clerkage Charge Only</h4>
+                        <p class="feature-desc">
+                            Only clerkage fee of <strong>₹60 per passenger</strong> is deducted if cancelled up to 30 minutes before scheduled departure. Remainder is credited instantly.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive Refund Calculator Card -->
+            <div class="train-card" style="padding: 28px; margin-top: 20px;">
+                <h3 style="font-size: 1.25rem; margin-bottom: 12px;">Interactive Cancellation &amp; Refund Simulator</h3>
+                <p style="color: var(--text-secondary); margin-bottom: 20px;">Enter ticket details to simulate exact refundable percentage and net refund amount before cancelling:</p>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; align-items: flex-end;">
+                    <div class="form-group">
+                        <label class="form-label">Ticket Fare Paid (₹)</label>
+                        <input type="number" id="simFare" class="form-control" value="2500" min="100">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Travel Class</label>
+                        <select id="simClass" class="form-control">
+                            <option value="1A">1A - AC First Class</option>
+                            <option value="2A">2A - AC 2-Tier</option>
+                            <option value="3A" selected>3A - AC 3-Tier</option>
+                            <option value="SL">SL - Sleeper</option>
+                            <option value="CC">CC - AC Chair Car</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Hours Left to Departure</label>
+                        <input type="number" id="simHours" class="form-control" value="52" min="0">
+                    </div>
+                    <div class="form-group">
+                        <button class="btn btn-primary" id="btnCalculateSimRefund">Calculate Refund</button>
+                    </div>
+                </div>
+
+                <div id="simRefundResult" class="refund-calculation-box" style="display: none; margin-top: 20px;">
+                    <!-- Result output -->
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= VIEW 6: RAILWAY ADMIN PANEL ================= -->
+        <section id="view-admin" class="view-section no-print">
+            <div class="admin-container">
+                <div class="admin-header">
+                    <div>
+                        <div class="badge badge-admin" style="margin-bottom: 6px;">Chief Administrator Portal</div>
+                        <h2>Railway Central Administration</h2>
+                        <p class="section-subtitle">System management: Train schedules, dynamic fares, user registries, payment audits, and refund settlements.</p>
+                    </div>
+
+                    <div class="admin-tabs-nav">
+                        <button class="admin-tab-btn active" data-tab="tab-admin-trains">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M4 15.5C4 17.43 5.57 19 7.5 19L6 20.5v.5h12v-.5L16.5 19c1.93 0 3.5-1.57 3.5-3.5V5c0-3.5-3.58-4-8-4s-8 .5-8 4v10.5zm8 1.5c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm6-7H6V5h12v5z"/></svg>
+                            Trains &amp; Schedules
+                        </button>
+                        <button class="admin-tab-btn" data-tab="tab-admin-payments">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                            Payment Audit Log
+                        </button>
+                        <button class="admin-tab-btn" data-tab="tab-admin-refunds">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 2v6h6"/><path d="M21 12A9 9 0 0 0 6 5.3L3 8"/><path d="M21 22v-6h-6"/><path d="M3 12a9 9 0 0 0 15 6.7l3-2.7"/></svg>
+                            Refund Settlement
+                        </button>
+                        <button class="admin-tab-btn" data-tab="tab-admin-users">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                            User Accounts
+                        </button>
+                        <button class="admin-tab-btn" data-tab="tab-admin-fares">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                            Fare &amp; Zone Rules
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Admin Tab 1: Trains Management -->
+                <div id="tab-admin-trains" class="admin-tab-content active">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h3>Scheduled Trains Fleet</h3>
+                        <button class="btn btn-primary btn-sm" id="btnOpenAddTrainModal">
+                            + Add New Train Schedule
+                        </button>
+                    </div>
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Train No &amp; Name</th>
+                                    <th>Zone</th>
+                                    <th>Route</th>
+                                    <th>Departure / Arrival</th>
+                                    <th>Duration</th>
+                                    <th>Classes &amp; Seats</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminTrainsTableBody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Admin Tab 2: Payment Audit Log -->
+                <div id="tab-admin-payments" class="admin-tab-content">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <div>
+                            <h3>Payment Transactions Ledger</h3>
+                            <p style="font-size: 0.85rem; color: var(--text-secondary);">Direct feed of all online gateway settlements and offline counter challans.</p>
+                        </div>
+                        <div id="adminTotalRevenueBadge" class="badge badge-cnf" style="font-size: 0.95rem; padding: 8px 16px;">
+                            Total Revenue: ₹0
+                        </div>
+                    </div>
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Txn ID</th>
+                                    <th>PNR</th>
+                                    <th>Passenger Email</th>
+                                    <th>Payment Mode</th>
+                                    <th>Amount</th>
+                                    <th>Timestamp</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminPaymentsTableBody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Admin Tab 3: Refund Settlement -->
+                <div id="tab-admin-refunds" class="admin-tab-content">
+                    <div style="margin-bottom: 20px;">
+                        <h3>Passenger Refund Clearance Queue</h3>
+                        <p style="font-size: 0.85rem; color: var(--text-secondary);">Review cancellation requests, verify computed refundable percentages, and release credits.</p>
+                    </div>
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>PNR</th>
+                                    <th>Train Details</th>
+                                    <th>User</th>
+                                    <th>Ticket Fare</th>
+                                    <th>Refundable %</th>
+                                    <th>Net Refund Amount</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminRefundsTableBody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Admin Tab 4: User Accounts -->
+                <div id="tab-admin-users" class="admin-tab-content">
+                    <div style="margin-bottom: 20px;">
+                        <h3>User Account Directory</h3>
+                        <p style="font-size: 0.85rem; color: var(--text-secondary);">Manage registered passengers and administrator permissions.</p>
+                    </div>
+                    <div class="data-table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Phone</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="adminUsersTableBody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Admin Tab 5: Fare & Zone Rules -->
+                <div id="tab-admin-fares" class="admin-tab-content">
+                    <div style="margin-bottom: 20px;">
+                        <h3>Fare Matrix by Zone &amp; Class</h3>
+                        <p style="font-size: 0.85rem; color: var(--text-secondary);">Configure base multipliers and minimum fares across Railway Zones.</p>
+                    </div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+                        <div class="train-card" style="padding: 20px;">
+                            <h4 style="margin-bottom: 14px;">Class Fare Multipliers</h4>
+                            <div id="adminClassRulesList">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+                        <div class="train-card" style="padding: 20px;">
+                            <h4 style="margin-bottom: 14px;">Railway Zone Multipliers</h4>
+                            <div id="adminZoneRulesList">
+                                <!-- Populated dynamically -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ================= VIEW 7: PRINTABLE E-TICKET ================= -->
+        <section id="view-ticket-print" class="view-section">
+            <div class="no-print" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+                <button class="btn btn-secondary btn-sm" id="btnCloseTicketView">
+                    &larr; Back to Dashboard
+                </button>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-primary" onclick="window.print()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                        Print Ticket / Save as PDF
+                    </button>
+                </div>
+            </div>
+
+            <!-- Authentic IRCTC-Style Printable Ticket -->
+            <div id="printableTicketArea" class="ticket-printable-area ticket-wrapper">
+                <!-- Injected dynamically by app.js -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ========================================================
+         MODALS & DIALOGS
+         ======================================================== -->
+
+    <!-- 1. Authentication Modal (Login / Register) -->
+    <div class="modal-overlay" id="authModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-sm auth-tab-btn active" data-tab="loginTab">Sign In</button>
+                    <button class="btn btn-sm auth-tab-btn btn-secondary" data-tab="registerTab">Register New Account</button>
+                </div>
+                <button class="btn-close-modal" id="btnCloseAuthModal">&times;</button>
+            </div>
+
+            <div class="modal-body">
+                <!-- Login Tab -->
+                <div id="loginTab">
+                    <form id="loginForm">
+                        <div class="form-group" style="margin-bottom: 14px;">
+                            <label class="form-label">Email Address</label>
+                            <input type="email" id="loginEmail" class="form-control" placeholder="user@example.com" required>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 16px;">
+                            <label class="form-label">Password</label>
+                            <input type="password" id="loginPassword" class="form-control" placeholder="••••••••" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-lg" style="width: 100%;">
+                            Log In to System
+                        </button>
+                    </form>
+
+                    <!-- Quick Demo Fill Buttons for Lab Evaluation -->
+                    <div style="margin-top: 20px; padding: 14px; background: rgba(255, 255, 255, 0.04); border-radius: var(--radius-sm); border: 1px dashed var(--border-color);">
+                        <span style="font-size: 0.78rem; color: var(--text-secondary); display: block; margin-bottom: 8px;">Quick Demo Fill for Testing:</span>
+                        <div style="display: flex; gap: 8px;">
+                            <button type="button" class="btn btn-secondary btn-sm" id="btnFillDemoPassenger" style="font-size: 0.75rem;">
+                                Passenger (Rahul)
+                            </button>
+                            <button type="button" class="btn btn-secondary btn-sm" id="btnFillDemoAdmin" style="font-size: 0.75rem;">
+                                Railway Admin
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Register Tab -->
+                <div id="registerTab" style="display: none;">
+                    <form id="registerForm">
+                        <div class="form-group" style="margin-bottom: 12px;">
+                            <label class="form-label">Full Name</label>
+                            <input type="text" id="regName" class="form-control" placeholder="e.g. Ramesh Kumar" required>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 12px;">
+                            <label class="form-label">Email Address</label>
+                            <input type="email" id="regEmail" class="form-control" placeholder="ramesh@example.com" required>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 12px;">
+                            <label class="form-label">Phone Number</label>
+                            <input type="tel" id="regPhone" class="form-control" placeholder="10-digit mobile" pattern="[0-9]{10}" required>
+                        </div>
+                        <div class="form-group" style="margin-bottom: 16px;">
+                            <label class="form-label">Create Password</label>
+                            <input type="password" id="regPassword" class="form-control" placeholder="Minimum 4 characters" minlength="4" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-lg" style="width: 100%;">
+                            Create Account
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Integrated Payment Gateway Modal -->
+    <div class="modal-overlay" id="paymentModal">
+        <div class="modal-box modal-lg">
+            <div class="modal-header">
+                <div>
+                    <h3 style="font-size: 1.25rem;">Railway Payment Gateway</h3>
+                    <span style="font-size: 0.8rem; color: var(--text-secondary);">Secure 256-Bit SSL Encrypted Rail Transaction</span>
+                </div>
+                <button class="btn-close-modal" id="btnClosePaymentModal">&times;</button>
+            </div>
+
+            <div class="modal-body">
+                <div style="background: rgba(30, 41, 59, 0.5); padding: 14px 20px; border-radius: var(--radius-sm); margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <span style="font-size: 0.85rem; color: var(--text-secondary);">Total Fare Payable:</span>
+                        <h2 id="paymentModalGrandTotal" class="text-gold" style="font-size: 1.6rem;">₹3,360</h2>
+                    </div>
+                    <div id="paymentModalTrainSummary" style="font-size: 0.85rem; text-align: right; color: var(--text-secondary);">
+                        Train 12952 &bull; 1 Passenger
+                    </div>
+                </div>
+
+                <!-- Payment Method Selector -->
+                <div class="payment-methods-grid">
+                    <div class="payment-method-card active" data-method="upi">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                        <span>UPI / QR Code</span>
+                    </div>
+                    <div class="payment-method-card" data-method="card">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                        <span>Credit / Debit Card</span>
+                    </div>
+                    <div class="payment-method-card" data-method="netbanking">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                        <span>Net Banking</span>
+                    </div>
+                    <div class="payment-method-card" data-method="offline">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                        <span>Offline (Station Challan)</span>
+                    </div>
+                </div>
+
+                <!-- Mode 1: UPI -->
+                <div id="payMethodUpi" class="pay-method-view">
+                    <div style="text-align: center;">
+                        <span style="font-size: 0.85rem; color: var(--text-secondary);">Scan this Railway BharatQR code using Google Pay / PhonePe / Paytm</span>
+                        <div class="qr-code-box" id="upiQrCodeContainer">
+                            <!-- SVG QR simulation -->
+                        </div>
+                        <div style="max-width: 380px; margin: 0 auto;">
+                            <label class="form-label" style="text-align: left;">Or enter VPA / UPI ID:</label>
+                            <input type="text" id="upiIdInput" class="form-control" placeholder="username@oksbi" value="passenger@upi">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mode 2: Card -->
+                <div id="payMethodCard" class="pay-method-view" style="display: none;">
+                    <div style="max-width: 440px; margin: 0 auto;">
+                        <div class="form-group" style="margin-bottom: 12px;">
+                            <label class="form-label">Card Number</label>
+                            <input type="text" id="cardNumberInput" class="form-control" placeholder="4123 •••• •••• 9821" value="4532 8920 1284 9012">
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
+                            <div class="form-group">
+                                <label class="form-label">Expiry (MM/YY)</label>
+                                <input type="text" id="cardExpiryInput" class="form-control" placeholder="12/28" value="08/29">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">CVV</label>
+                                <input type="password" id="cardCvvInput" class="form-control" placeholder="•••" maxlength="4" value="789">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Cardholder Name</label>
+                            <input type="text" id="cardNameInput" class="form-control" placeholder="Name as on card" value="Rahul Sharma">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mode 3: Net Banking -->
+                <div id="payMethodNetbanking" class="pay-method-view" style="display: none;">
+                    <div style="max-width: 440px; margin: 0 auto;">
+                        <div class="form-group" style="margin-bottom: 14px;">
+                            <label class="form-label">Select Your Bank</label>
+                            <select id="netBankSelect" class="form-control">
+                                <option value="HDFC">HDFC Bank</option>
+                                <option value="SBI">State Bank of India (SBI)</option>
+                                <option value="ICICI">ICICI Bank</option>
+                                <option value="AXIS">Axis Bank</option>
+                                <option value="PNB">Punjab National Bank</option>
+                            </select>
+                        </div>
+                        <p style="font-size: 0.85rem; color: var(--text-secondary);">You will be securely redirected to your bank's authenticated gateway to approve the ticket fare.</p>
+                    </div>
+                </div>
+
+                <!-- Mode 4: Offline Counter Mode -->
+                <div id="payMethodOffline" class="pay-method-view" style="display: none;">
+                    <div class="offline-counter-notice">
+                        <h4 style="color: #fbbf24; margin-bottom: 6px;">Station Cash Counter / Challan Booking Mode</h4>
+                        <p>A provisional reservation slip with a unique 10-digit PNR and Challan Token will be generated immediately. You can make payment at any Computerized Railway Reservation Counter (PRS) within 24 hours to finalize physical issuance.</p>
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="btnCancelPayment">Cancel</button>
+                <button class="btn btn-primary" id="btnConfirmPaymentAndBook">
+                    <span id="btnPayText">Authorize &amp; Generate PNR</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. Via Route & Intermediate Stations Modal -->
+    <div class="modal-overlay" id="viaStationsModal">
+        <div class="modal-box modal-lg">
+            <div class="modal-header">
+                <div>
+                    <h3 id="viaModalTrainTitle">Train Route &amp; Halts</h3>
+                    <span id="viaModalTrainSub" style="font-size: 0.82rem; color: var(--text-secondary);">Via Details and Intermediate Timings</span>
+                </div>
+                <button class="btn-close-modal" id="btnCloseViaModal">&times;</button>
+            </div>
+            <div class="modal-body" id="viaModalBody">
+                <!-- Injected dynamically -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. Ticket Cancellation & Refund Modal -->
+    <div class="modal-overlay" id="cancelTicketModal">
+        <div class="modal-box">
+            <div class="modal-header">
+                <div>
+                    <h3>Cancel Ticket &amp; Claim Refund</h3>
+                    <span id="cancelModalPnr" style="font-size: 0.82rem; color: var(--text-secondary);">PNR: 2468135790</span>
+                </div>
+                <button class="btn-close-modal" id="btnCloseCancelModal">&times;</button>
+            </div>
+            <div class="modal-body" id="cancelModalBody">
+                <!-- Calculated refund details injected dynamically -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="btnDismissCancelModal">Keep My Ticket</button>
+                <button class="btn btn-danger" id="btnConfirmCancellation">Confirm Cancellation</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. Admin Add New Train Modal -->
+    <div class="modal-overlay" id="addTrainModal">
+        <div class="modal-box modal-lg">
+            <div class="modal-header">
+                <div>
+                    <h3>Add New Train Schedule</h3>
+                    <span style="font-size: 0.82rem; color: var(--text-secondary);">Register a new service into the Railway Network</span>
+                </div>
+                <button class="btn-close-modal" id="btnCloseAddTrainModal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="adminAddTrainForm">
+                    <div style="display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 14px; margin-bottom: 14px;">
+                        <div class="form-group">
+                            <label class="form-label">Train Number</label>
+                            <input type="text" id="newTrainNo" class="form-control" placeholder="e.g. 12424" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Train Name</label>
+                            <input type="text" id="newTrainName" class="form-control" placeholder="e.g. Durg Rajdhani Express" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Railway Zone</label>
+                            <select id="newTrainZone" class="form-control">
+                                <option value="Northern">Northern</option>
+                                <option value="Western">Western</option>
+                                <option value="Southern">Southern</option>
+                                <option value="Eastern">Eastern</option>
+                                <option value="Central">Central</option>
+                                <option value="South Western">South Western</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+                        <div class="form-group">
+                            <label class="form-label">Origin Station</label>
+                            <select id="newTrainOrigin" class="form-control"></select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Destination Station</label>
+                            <select id="newTrainDestination" class="form-control"></select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Departure Time</label>
+                            <input type="time" id="newTrainDep" class="form-control" value="08:00" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Arrival Time</label>
+                            <input type="time" id="newTrainArr" class="form-control" value="18:30" required>
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px;">
+                        <div class="form-group">
+                            <label class="form-label">Distance (Km)</label>
+                            <input type="number" id="newTrainDistance" class="form-control" value="650" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Travel Duration (e.g. 10h 30m)</label>
+                            <input type="text" id="newTrainDuration" class="form-control" value="10h 30m" required>
+                        </div>
+                    </div>
+
+                    <h4 style="font-size: 0.95rem; margin: 18px 0 10px;">Initial Seat Quotas &amp; Base Fares</h4>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 14px;">
+                        <div class="train-card" style="padding: 12px;">
+                            <span style="font-weight: 700; font-size: 0.85rem;">2A (AC 2-Tier)</span>
+                            <div style="display: flex; gap: 8px; margin-top: 6px;">
+                                <input type="number" id="newQuota2ASeats" class="form-control" placeholder="Seats" value="48">
+                                <input type="number" id="newQuota2AFare" class="form-control" placeholder="Fare" value="1850">
+                            </div>
+                        </div>
+                        <div class="train-card" style="padding: 12px;">
+                            <span style="font-weight: 700; font-size: 0.85rem;">3A (AC 3-Tier)</span>
+                            <div style="display: flex; gap: 8px; margin-top: 6px;">
+                                <input type="number" id="newQuota3ASeats" class="form-control" placeholder="Seats" value="120">
+                                <input type="number" id="newQuota3AFare" class="form-control" placeholder="Fare" value="1280">
+                            </div>
+                        </div>
+                        <div class="train-card" style="padding: 12px;">
+                            <span style="font-weight: 700; font-size: 0.85rem;">SL (Sleeper)</span>
+                            <div style="display: flex; gap: 8px; margin-top: 6px;">
+                                <input type="number" id="newQuotaSLSeats" class="form-control" placeholder="Seats" value="300">
+                                <input type="number" id="newQuotaSLFare" class="form-control" placeholder="Fare" value="460">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer" style="padding: 16px 0 0; margin-top: 14px;">
+                        <button type="button" class="btn btn-secondary" id="btnCancelAddTrain">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Train Schedule</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="toast-container no-print"></div>
+
+    <!-- Scripts -->
+    <script src="js/data.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
